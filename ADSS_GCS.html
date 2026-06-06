@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ADSS — Ground Control Station</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#060b14;
+  --bg2:#0a1220;
+  --panel:#0d1828;
+  --panel2:#111f35;
+  --border:#1a3050;
+  --border2:#254060;
+  --accent:#00d4ff;
+  --accent-glow:rgba(0,212,255,0.15);
+  --green:#00ff88;
+  --green-glow:rgba(0,255,136,0.15);
+  --warn:#ffaa00;
+  --warn-glow:rgba(255,170,0,0.15);
+  --danger:#ff3344;
+  --danger-glow:rgba(255,51,68,0.15);
+  --text:#cce0f0;
+  --text2:#7a9ab8;
+  --mono:'Share Tech Mono',monospace;
+  --orb:'Orbitron',sans-serif;
+  --bar:'Barlow',sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--bar);
+  font-size:13px;
+  display:flex;
+  flex-direction:column;
+}
+/* scanline */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,rgba(0,212,255,0.018) 0,rgba(0,212,255,0.018) 1px,transparent 1px,transparent 4px);
+  pointer-events:none;z-index:9999;
+}
+/* noise */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9998;opacity:.4;
+}
+
+/* ─── HEADER ─── */
+header{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:56px;
+  background:linear-gradient(90deg,var(--bg2) 0%,var(--panel) 100%);
+  border-bottom:1px solid var(--border2);
+  position:relative;
+  box-shadow:0 4px 30px rgba(0,0,0,0.6);
+}
+header::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  opacity:.4;
+}
+.logo{
+  font-family:var(--orb);font-size:16px;font-weight:900;
+  letter-spacing:4px;color:var(--accent);text-transform:uppercase;
+  text-shadow:0 0 20px rgba(0,212,255,0.5);
+  display:flex;align-items:center;gap:12px;
+}
+.logo-sep{width:1px;height:28px;background:var(--border2);}
+.logo-sub{font-size:10px;font-weight:400;color:var(--text2);letter-spacing:2px;line-height:1.4}
+.header-stats{
+  display:flex;gap:24px;align-items:center;
+}
+.hstat{
+  display:flex;flex-direction:column;align-items:center;
+  font-family:var(--mono);
+}
+.hstat-val{font-size:18px;color:var(--accent);line-height:1}
+.hstat-val.green{color:var(--green)}
+.hstat-val.warn{color:var(--warn)}
+.hstat-lbl{font-size:8px;color:var(--text2);letter-spacing:1.5px;margin-top:2px;text-transform:uppercase}
+.hstat-sep{width:1px;height:32px;background:var(--border)}
+.header-right{display:flex;align-items:center;gap:16px}
+.all-ok{
+  font-family:var(--mono);font-size:9px;letter-spacing:2px;
+  padding:5px 12px;border-radius:2px;text-transform:uppercase;
+  background:var(--green-glow);color:var(--green);
+  border:1px solid rgba(0,255,136,0.3);
+  animation:glow-pulse 2.5s ease-in-out infinite;
+}
+@keyframes glow-pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,0.2)}
+  50%{box-shadow:0 0 12px 3px rgba(0,255,136,0.1)}
+}
+.utc{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:2px}
+
+/* ─── NAV TABS ─── */
+nav{
+  flex-shrink:0;
+  display:flex;background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;gap:0;
+}
+.tab{
+  font-family:var(--orb);font-size:9px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;
+  padding:14px 22px;cursor:pointer;color:var(--text2);
+  border-bottom:2px solid transparent;
+  border-right:1px solid var(--border);
+  transition:all .25s;user-select:none;
+  display:flex;align-items:center;gap:8px;
+  position:relative;
+}
+.tab:first-child{border-left:1px solid var(--border)}
+.tab:hover{color:var(--text);background:rgba(0,212,255,0.03)}
+.tab.active{
+  color:var(--accent);border-bottom-color:var(--accent);
+  background:linear-gradient(180deg,rgba(0,212,255,0.07) 0%,transparent 100%);
+}
+.tab .dot{
+  width:6px;height:6px;border-radius:50%;background:var(--text2);
+  transition:all .25s;flex-shrink:0;
+}
+.tab.active .dot{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.tab-badge{
+  font-family:var(--mono);font-size:8px;padding:1px 5px;border-radius:1px;
+  background:var(--danger-glow);color:var(--danger);border:1px solid rgba(255,51,68,0.3);
+}
+
+/* ─── MAIN CONTENT ─── */
+main{
+  flex:1;overflow:hidden;position:relative;
+}
+.page{
+  position:absolute;inset:0;overflow-y:auto;
+  padding:16px 24px 20px;
+  display:none;
+  animation:fadeIn .2s ease;
+}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── CARD ─── */
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:3px;
+  overflow:hidden;
+  position:relative;
+}
+.card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent-glow),transparent);
+}
+.ch{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;
+  background:var(--panel2);
+  border-bottom:1px solid var(--border);
+  font-family:var(--orb);font-size:9px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;color:var(--text2);
+}
+.ch-right{display:flex;align-items:center;gap:8px}
+.cb{padding:14px}
+
+/* ─── GRIDS ─── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.g-fleet{display:grid;grid-template-columns:340px 1fr;gap:14px}
+.g-video{display:grid;grid-template-columns:1fr 280px;gap:14px}
+.g-system{display:grid;grid-template-columns:280px 1fr 220px 220px;gap:14px}
+
+/* ─── DRONE CARD ─── */
+.drone-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;border-bottom:1px solid rgba(26,48,80,.5);
+  cursor:pointer;transition:background .2s;
+}
+.drone-row:last-child{border-bottom:none}
+.drone-row:hover{background:rgba(0,212,255,0.04)}
+.drone-icon{
+  width:44px;height:44px;border-radius:3px;
+  background:var(--panel2);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;flex-shrink:0;position:relative;
+}
+.di-pulse{
+  position:absolute;inset:-3px;border-radius:5px;
+  border:1px solid var(--accent);
+  animation:di-anim 2s ease-in-out infinite;
+}
+@keyframes di-anim{
+  0%,100%{opacity:.4;transform:scale(1)}
+  50%{opacity:.1;transform:scale(1.05)}
+}
+.di-pulse.yellow{border-color:var(--warn)}
+.drone-info{flex:1;min-width:0}
+.dname{
+  font-family:var(--orb);font-size:11px;font-weight:700;
+  letter-spacing:1px;color:#e8f4ff;
+  display:flex;align-items:center;gap:8px;margin-bottom:4px;
+}
+.badge{
+  font-family:var(--mono);font-size:8px;padding:2px 7px;
+  border-radius:1px;letter-spacing:1.5px;text-transform:uppercase;
+}
+.b-fly{background:rgba(0,212,255,.12);color:var(--accent);border:1px solid rgba(0,212,255,.3)}
+.b-dock{background:rgba(255,170,0,.12);color:var(--warn);border:1px solid rgba(255,170,0,.3)}
+.b-chg{background:rgba(0,255,136,.12);color:var(--green);border:1px solid rgba(0,255,136,.3)}
+.dmeta{font-family:var(--mono);font-size:10px;color:var(--text2);line-height:1.7}
+.dmeta b{color:var(--text);font-weight:400}
+.bat-wrap{margin-top:6px}
+.bat-bar{height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;margin-top:2px}
+.bat-fill{height:100%;border-radius:2px;transition:width .6s}
+.bf-hi{background:linear-gradient(90deg,var(--green),#00cc6a)}
+.bf-md{background:linear-gradient(90deg,var(--warn),#ff8800)}
+.bf-lo{background:linear-gradient(90deg,var(--danger),#ff0022);animation:bat-flash .8s ease infinite alternate}
+@keyframes bat-flash{from{opacity:1}to{opacity:.5}}
+.bat-pct{font-family:var(--mono);font-size:9px;color:var(--text2)}
+
+/* mission stats bar */
+.mstats{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--border);
+}
+.ms-item{
+  padding:12px 14px;text-align:center;
+  border-right:1px solid var(--border);
+}
+.ms-item:last-child{border-right:none}
+.ms-val{font-family:var(--orb);font-size:20px;color:var(--accent);display:block}
+.ms-val.g{color:var(--green)}
+.ms-lbl{font-family:var(--mono);font-size:8px;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
+
+/* ─── MAP ─── */
+.map-wrap{
+  position:relative;overflow:hidden;
+  height:100%;min-height:320px;
+  background:#050d1a;
+}
+.map-grid{
+  position:absolute;inset:0;
+  background:
+    repeating-linear-gradient(0deg,rgba(0,212,255,.05) 0,rgba(0,212,255,.05) 1px,transparent 1px,transparent 50px),
+    repeating-linear-gradient(90deg,rgba(0,212,255,.05) 0,rgba(0,212,255,.05) 1px,transparent 1px,transparent 50px);
+}
+.map-grid2{
+  position:absolute;inset:0;
+  background:
+    repeating-linear-gradient(0deg,rgba(0,212,255,.025) 0,rgba(0,212,255,.025) 1px,transparent 1px,transparent 10px),
+    repeating-linear-gradient(90deg,rgba(0,212,255,.025) 0,rgba(0,212,255,.025) 1px,transparent 1px,transparent 10px);
+}
+.map-zone{
+  position:absolute;border:1px solid rgba(0,212,255,.1);
+  background:rgba(0,212,255,.02);
+  font-family:var(--mono);font-size:9px;color:rgba(0,212,255,.25);
+  display:flex;align-items:flex-start;padding:4px 6px;
+}
+.cov-circle{
+  position:absolute;border-radius:50%;
+  border:1px dashed rgba(0,212,255,.2);
+  background:rgba(0,212,255,.03);
+  transform:translate(-50%,-50%);
+}
+.scan-line{
+  position:absolute;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent 0%,rgba(0,212,255,.6) 50%,transparent 100%);
+  animation:scan 4s linear infinite;
+  pointer-events:none;
+}
+@keyframes scan{from{top:0;opacity:.8}to{top:100%;opacity:0}}
+.d-dot{
+  position:absolute;transform:translate(-50%,-50%);
+  cursor:pointer;
+}
+.d-dot-inner{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 14px var(--accent),0 0 4px var(--accent);
+  position:relative;z-index:2;
+}
+.d-dot-inner.y{background:var(--warn);box-shadow:0 0 14px var(--warn),0 0 4px var(--warn)}
+.d-dot-ring{
+  position:absolute;border-radius:50%;
+  border:1px solid rgba(0,212,255,.4);
+  transform:translate(-50%,-50%);
+  animation:ring-out 2.5s ease-out infinite;
+}
+.d-dot-ring.y{border-color:rgba(255,170,0,.4)}
+@keyframes ring-out{
+  0%{width:14px;height:14px;opacity:.8}
+  100%{width:80px;height:80px;opacity:0}
+}
+.d-dot-label{
+  position:absolute;left:14px;top:-8px;
+  font-family:var(--mono);font-size:9px;color:var(--accent);
+  background:rgba(6,11,20,.9);padding:2px 5px;
+  border:1px solid rgba(0,212,255,.25);white-space:nowrap;
+}
+.d-dot-label.y{color:var(--warn);border-color:rgba(255,170,0,.25)}
+.map-base{
+  position:absolute;width:12px;height:12px;
+  background:rgba(0,212,255,.2);border:1px solid rgba(0,212,255,.6);
+  transform:translate(-50%,-50%) rotate(45deg);
+  cursor:pointer;
+}
+.map-base-label{
+  position:absolute;left:14px;top:-6px;
+  font-family:var(--mono);font-size:9px;color:rgba(0,212,255,.6);
+  background:rgba(6,11,20,.9);padding:2px 5px;
+  border:1px solid rgba(0,212,255,.2);white-space:nowrap;
+}
+.map-coords{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:9px;color:rgba(0,212,255,.4);
+  background:rgba(6,11,20,.7);padding:3px 8px;border:1px solid rgba(0,212,255,.1);
+}
+.patrol-path{
+  position:absolute;inset:0;pointer-events:none;
+}
+
+/* ─── VIDEO FEED ─── */
+.vf-wrap{
+  position:relative;background:#050a0f;
+  border:1px solid var(--border);overflow:hidden;
+  aspect-ratio:16/10;
+}
+.therm{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 55% 65% at 30% 52%,rgba(255,110,0,.65) 0%,rgba(200,55,0,.45) 25%,rgba(80,15,0,.7) 55%,rgba(5,8,12,1) 100%);
+}
+.therm2{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 38% 48% at 66% 45%,rgba(255,165,0,.55) 0%,rgba(160,70,0,.35) 40%,transparent 70%);
+}
+.therm-noise{
+  position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  mix-blend-mode:overlay;
+}
+.bbox{
+  position:absolute;border:2px solid;
+  display:flex;flex-direction:column;
+}
+.bbox-lbl{
+  font-family:var(--mono);font-size:11px;
+  padding:2px 7px;font-weight:700;
+}
+.bbox-corner{position:absolute;width:8px;height:8px;}
+.bbox-corner.tl{top:-2px;left:-2px;border-top:2px solid;border-left:2px solid}
+.bbox-corner.tr{top:-2px;right:-2px;border-top:2px solid;border-right:2px solid}
+.bbox-corner.bl{bottom:-2px;left:-2px;border-bottom:2px solid;border-left:2px solid}
+.bbox-corner.br{bottom:-2px;right:-2px;border-bottom:2px solid;border-right:2px solid}
+.bbox.human{border-color:#ff4455;left:10%;top:18%;width:22%;height:52%}
+.bbox.human .bbox-lbl{background:rgba(255,50,70,.85);color:#fff}
+.bbox.human .bbox-corner{border-color:#ff4455}
+.bbox.vehicle{border-color:var(--warn);right:14%;top:22%;width:28%;height:46%}
+.bbox.vehicle .bbox-lbl{background:rgba(255,160,0,.85);color:#000}
+.bbox.vehicle .bbox-corner{border-color:var(--warn)}
+.crosshair{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:28px;height:28px;border:1px solid rgba(0,212,255,.6);border-radius:50%;
+  pointer-events:none;
+}
+.crosshair::before,.crosshair::after{
+  content:'';position:absolute;background:rgba(0,212,255,.6);
+}
+.crosshair::before{width:1px;height:18px;left:calc(50% - .5px);top:-5px}
+.crosshair::after{width:18px;height:1px;top:calc(50% - .5px);left:-5px}
+.vf-overlay{
+  position:absolute;font-family:var(--mono);font-size:10px;
+  color:rgba(0,212,255,.8);pointer-events:none;
+  text-shadow:0 1px 4px rgba(0,0,0,.8);
+}
+.rec{
+  position:absolute;top:10px;right:10px;
+  display:flex;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:10px;color:var(--danger);
+}
+.rec::before{
+  content:'';width:7px;height:7px;border-radius:50%;
+  background:var(--danger);box-shadow:0 0 8px var(--danger);
+  animation:blink 1s infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.1}}
+
+/* detection panel */
+.det-item{
+  padding:10px 14px;
+  border-bottom:1px solid rgba(26,48,80,.5);
+}
+.det-item:last-child{border-bottom:none}
+.det-type{font-family:var(--orb);font-size:11px;font-weight:700;letter-spacing:1px}
+.dt-h{color:#ff6677}
+.dt-v{color:var(--warn)}
+.det-meta{font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;line-height:1.6}
+.conf-row{display:flex;align-items:center;gap:8px;margin-top:5px}
+.conf-bar{flex:1;height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+.conf-fill{height:100%;border-radius:2px}
+.cf-r{background:linear-gradient(90deg,#ff4455,#ff0020)}
+.cf-w{background:linear-gradient(90deg,var(--warn),#ff8800)}
+.conf-pct{font-family:var(--mono);font-size:9px;color:var(--text2);width:28px;text-align:right;flex-shrink:0}
+
+/* quick actions */
+.qa-row{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--border)}
+
+/* AI engine */
+.aie{
+  background:var(--panel2);border:1px solid var(--border);
+  padding:10px 12px;font-family:var(--mono);font-size:10px;
+  color:var(--text2);line-height:2;
+}
+.aie b{color:var(--text);font-weight:400}
+.aie .on{color:var(--green)}
+
+/* ─── ALERT LOG ─── */
+.ev-item{
+  padding:10px 14px;border-bottom:1px solid rgba(26,48,80,.4);
+  cursor:pointer;transition:background .15s;
+}
+.ev-item:hover{background:rgba(0,212,255,.03)}
+.ev-time{font-family:var(--mono);font-size:9px;color:var(--text2)}
+.ev-title{font-family:var(--orb);font-size:11px;font-weight:600;margin:3px 0 2px}
+.ev-title.h{color:#ff7788}
+.ev-title.v{color:var(--warn)}
+.ev-title.a{color:#66aaff}
+.ev-title.d{color:var(--green)}
+.ev-title.p{color:var(--text2)}
+.ev-detail{font-family:var(--mono);font-size:9px;color:var(--text2)}
+
+/* spectrum */
+.spec-container{background:#040a10;border:1px solid var(--border);padding:12px 14px}
+.spec-bars{display:flex;align-items:flex-end;gap:2px;height:70px}
+.sbar{
+  flex:1;background:rgba(0,212,255,.4);border-radius:1px 1px 0 0;
+  min-height:3px;transition:height .25s ease;
+}
+.sbar.hi{background:var(--accent);box-shadow:0 0 6px rgba(0,212,255,.5)}
+.spec-labels{
+  display:flex;justify-content:space-between;
+  font-family:var(--mono);font-size:9px;color:var(--text2);margin-top:5px;
+}
+.tdoa-row{
+  display:flex;align-items:center;gap:8px;margin-top:10px;
+  font-family:var(--mono);font-size:10px;color:var(--text2);
+  padding:6px 10px;background:rgba(0,212,255,.04);border-left:2px solid var(--accent);
+}
+.tdoa-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+
+.stat24g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.s24{
+  background:var(--panel2);border:1px solid var(--border);
+  padding:12px;text-align:center;
+}
+.s24-val{font-family:var(--orb);font-size:24px;color:var(--accent);display:block}
+.s24-val.g{color:var(--green)}
+.s24-lbl{font-family:var(--mono);font-size:8px;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px}
+
+/* ─── SYSTEM STATUS ─── */
+.mod-row{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 14px;border-bottom:1px solid rgba(26,48,80,.4);
+  font-family:var(--bar);font-size:12px;
+}
+.mod-row:last-child{border-bottom:none}
+.mod-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.md-ok{background:var(--green);box-shadow:0 0 8px var(--green)}
+.md-warn{background:var(--warn);box-shadow:0 0 8px var(--warn);animation:blink .8s infinite}
+.mod-name{flex:1}
+.mod-tag{font-family:var(--mono);font-size:9px;color:var(--text2)}
+
+.em-btn{
+  display:flex;align-items:center;gap:8px;
+  width:100%;padding:10px 14px;margin-bottom:7px;
+  font-family:var(--orb);font-size:9px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;
+  border:1px solid;cursor:pointer;
+  transition:all .2s;background:transparent;
+  text-align:left;
+}
+.em-btn:last-child{margin-bottom:0}
+.em-btn .em-icon{font-size:14px;flex-shrink:0}
+.em-r{border-color:var(--danger);color:var(--danger)}
+.em-r:hover{background:var(--danger-glow);box-shadow:0 0 20px rgba(255,51,68,.1)}
+.em-b{border-color:var(--accent);color:var(--accent)}
+.em-b:hover{background:var(--accent-glow);box-shadow:0 0 20px rgba(0,212,255,.08)}
+.em-g{border-color:var(--green);color:var(--green)}
+.em-g:hover{background:var(--green-glow);box-shadow:0 0 20px rgba(0,255,136,.08)}
+.em-m{border-color:var(--border2);color:var(--text2)}
+.em-m:hover{background:rgba(74,106,138,.1)}
+
+.sess-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 14px;border-bottom:1px solid rgba(26,48,80,.4);
+  font-family:var(--mono);font-size:10px;
+}
+.sess-row:last-child{border-bottom:none}
+.sr-l{color:var(--text2)}
+.sr-v{color:var(--text)}
+.sr-v.g{color:var(--green)}
+.sr-v.a{color:var(--accent)}
+
+.link-info{
+  padding:8px 14px;border-top:1px solid var(--border);
+  font-family:var(--mono);font-size:9px;color:var(--text2);
+  display:flex;gap:12px;flex-wrap:wrap;
+}
+.link-info b{color:var(--green)}
+
+/* ─── BUTTONS ─── */
+.btn{
+  font-family:var(--orb);font-size:8px;font-weight:600;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:6px 14px;border:1px solid;cursor:pointer;
+  transition:all .2s;background:transparent;border-radius:1px;
+}
+.btn-b{border-color:var(--accent);color:var(--accent)}
+.btn-b:hover{background:var(--accent-glow)}
+.btn-g{border-color:var(--green);color:var(--green)}
+.btn-g:hover{background:var(--green-glow)}
+.btn-r{border-color:var(--danger);color:var(--danger)}
+.btn-r:hover{background:var(--danger-glow)}
+.btn-m{border-color:var(--border2);color:var(--text2)}
+.btn-m:hover{background:rgba(74,106,138,.1)}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="logo">
+    ADSS
+    <div class="logo-sep"></div>
+    <div class="logo-sub">
+      Ground Control Station<br/>
+      <span style="color:var(--accent);font-size:9px">ATILIM UNIVERSITY · MECE 322</span>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="hstat">
+      <div class="hstat-val green">2</div>
+      <div class="hstat-lbl">Active Drones</div>
+    </div>
+    <div class="hstat-sep"></div>
+    <div class="hstat">
+      <div class="hstat-val">3.2</div>
+      <div class="hstat-lbl">km² Coverage</div>
+    </div>
+    <div class="hstat-sep"></div>
+    <div class="hstat">
+      <div class="hstat-val">0</div>
+      <div class="hstat-lbl">Active Alerts</div>
+    </div>
+    <div class="hstat-sep"></div>
+    <div class="hstat">
+      <div class="hstat-val green">97%</div>
+      <div class="hstat-lbl">Uptime</div>
+    </div>
+    <div class="hstat-sep"></div>
+    <div class="hstat">
+      <div class="hstat-val" id="hDuration">6h 42m</div>
+      <div class="hstat-lbl">Session</div>
+    </div>
+    <div class="hstat-sep"></div>
+    <div class="hstat">
+      <div class="hstat-val warn">22%</div>
+      <div class="hstat-lbl">D03 Battery</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="all-ok">● ALL SYSTEMS NOMINAL</div>
+    <div class="utc" id="utcClock">--:--:-- UTC</div>
+  </div>
+</header>
+
+<!-- ══ NAV TABS ══ -->
+<nav>
+  <div class="tab active" id="tab-fleet" onclick="switchTab('fleet')">
+    <div class="dot"></div>Fleet Dashboard
+  </div>
+  <div class="tab" id="tab-video" onclick="switchTab('video')">
+    <div class="dot"></div>Live Video Feed
+    <span class="tab-badge">LIVE</span>
+  </div>
+  <div class="tab" id="tab-alerts" onclick="switchTab('alerts')">
+    <div class="dot"></div>Alert Log &amp; Acoustic Monitor
+  </div>
+  <div class="tab" id="tab-system" onclick="switchTab('system')">
+    <div class="dot"></div>System Status
+  </div>
+</nav>
+
+<!-- ══ MAIN ══ -->
+<main>
+
+<!-- ════════════════════════════
+  PAGE 1 — FLEET DASHBOARD
+════════════════════════════ -->
+<div class="page active" id="page-fleet">
+  <div class="g-fleet" style="height:calc(100% - 32px)">
+
+    <!-- LEFT COLUMN -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <!-- Fleet status -->
+      <div class="card">
+        <div class="ch">
+          <span>Drone Fleet Status</span>
+          <div class="ch-right">
+            <span style="font-family:var(--mono);font-size:9px;color:var(--green)">3 UNITS REGISTERED</span>
+          </div>
+        </div>
+
+        <!-- DRONE 01 -->
+        <div class="drone-row">
+          <div class="drone-icon">
+            🚁<div class="di-pulse"></div>
+          </div>
+          <div class="drone-info">
+            <div class="dname">DRONE 01 <span class="badge b-fly">FLYING</span></div>
+            <div class="dmeta">
+              Sector: <b>A1-NE</b> &nbsp;·&nbsp; Alt: <b>42 m</b> &nbsp;·&nbsp; Lat/Lon: <b>39.9121°N 32.2834°E</b><br/>
+              Signal: <b>Strong</b> &nbsp;·&nbsp; Latency: <b>168 ms</b>
+            </div>
+            <div class="bat-wrap">
+              <div style="display:flex;justify-content:space-between">
+                <span class="bat-pct">Battery</span>
+                <span class="bat-pct" style="color:var(--green)">78%</span>
+              </div>
+              <div class="bat-bar"><div class="bat-fill bf-hi" style="width:78%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DRONE 02 -->
+        <div class="drone-row">
+          <div class="drone-icon">
+            🚁<div class="di-pulse" style="animation-delay:.8s"></div>
+          </div>
+          <div class="drone-info">
+            <div class="dname">DRONE 02 <span class="badge b-fly">FLYING</span></div>
+            <div class="dmeta">
+              Sector: <b>B1</b> &nbsp;·&nbsp; Alt: <b>38 m</b> &nbsp;·&nbsp; Lat/Lon: <b>39.9098°N 32.2867°E</b><br/>
+              Signal: <b>Fair</b> &nbsp;·&nbsp; Latency: <b>120 ms</b>
+            </div>
+            <div class="bat-wrap">
+              <div style="display:flex;justify-content:space-between">
+                <span class="bat-pct">Battery</span>
+                <span class="bat-pct" style="color:var(--warn)">45%</span>
+              </div>
+              <div class="bat-bar"><div class="bat-fill bf-md" style="width:45%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DRONE 03 -->
+        <div class="drone-row">
+          <div class="drone-icon" style="border-color:rgba(255,170,0,.4)">
+            🚁<div class="di-pulse yellow" style="animation-delay:1.4s"></div>
+          </div>
+          <div class="drone-info">
+            <div class="dname">DRONE 03 <span class="badge b-dock">DOCKING</span></div>
+            <div class="dmeta">
+              Dock: <b>Dock A</b> &nbsp;·&nbsp; ETA: <b>4 min</b> &nbsp;·&nbsp; Descending<br/>
+              Signal: <b>Fair</b> &nbsp;·&nbsp; Latency: <b>74 ms</b>
+            </div>
+            <div class="bat-wrap">
+              <div style="display:flex;justify-content:space-between">
+                <span class="bat-pct">Battery</span>
+                <span class="bat-pct" style="color:var(--danger)">22% ⚠</span>
+              </div>
+              <div class="bat-bar"><div class="bat-fill bf-lo" style="width:22%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mission stats -->
+        <div class="mstats">
+          <div class="ms-item">
+            <span class="ms-val g">2</span>
+            <div class="ms-lbl">Active</div>
+          </div>
+          <div class="ms-item">
+            <span class="ms-val">3.2</span>
+            <div class="ms-lbl">km² Covered</div>
+          </div>
+          <div class="ms-item">
+            <span class="ms-val">0</span>
+            <div class="ms-lbl">Alerts</div>
+          </div>
+          <div class="ms-item">
+            <span class="ms-val g">97%</span>
+            <div class="ms-lbl">Uptime</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="card">
+        <div class="ch"><span>Emergency Controls</span></div>
+        <div class="cb" style="display:flex;flex-direction:column;gap:6px">
+          <button class="em-btn em-r"><span class="em-icon">⚠</span> Emergency Return All Drones</button>
+          <button class="em-btn em-b"><span class="em-icon">↩</span> Return Drone 01</button>
+          <button class="em-btn em-b"><span class="em-icon">↩</span> Return Drone 02</button>
+          <button class="em-btn em-g"><span class="em-icon">▶</span> Resume Patrol Cycle</button>
+          <button class="em-btn em-m"><span class="em-icon">⏸</span> Pause All Drones</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN — MAP -->
+    <div class="card" style="display:flex;flex-direction:column">
+      <div class="ch">
+        <span>Patrol Map — Atılım University Campus</span>
+        <div class="ch-right">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--text2)">2 km² ZONE</span>
+          <button class="btn btn-m" style="padding:3px 8px">SATELLITE</button>
+          <button class="btn btn-b" style="padding:3px 8px">OVERLAY</button>
+        </div>
+      </div>
+      <div class="map-wrap" style="flex:1">
+        <div class="map-grid"></div>
+        <div class="map-grid2"></div>
+        <div class="scan-line"></div>
+
+        <!-- Zones -->
+        <div class="map-zone" style="left:5%;top:5%;width:44%;height:44%">ZONE A</div>
+        <div class="map-zone" style="left:51%;top:5%;width:44%;height:44%">ZONE B</div>
+        <div class="map-zone" style="left:5%;top:51%;width:44%;height:44%">ZONE C</div>
+        <div class="map-zone" style="left:51%;top:51%;width:44%;height:44%">ZONE D</div>
+
+        <!-- Coverage -->
+        <div class="cov-circle" style="width:180px;height:180px;left:27%;top:30%"></div>
+        <div class="cov-circle" style="width:160px;height:160px;left:68%;top:28%"></div>
+
+        <!-- Patrol paths SVG -->
+        <svg class="patrol-path" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <polyline points="27,30 35,20 45,25 40,38 27,35" fill="none" stroke="rgba(0,212,255,0.15)" stroke-width=".4" stroke-dasharray="1,2"/>
+          <polyline points="68,28 75,18 85,22 80,35 68,32" fill="none" stroke="rgba(0,212,255,0.15)" stroke-width=".4" stroke-dasharray="1,2"/>
+        </svg>
+
+        <!-- Drone 01 -->
+        <div class="d-dot" style="left:27%;top:30%">
+          <div class="d-dot-inner"></div>
+          <div class="d-dot-ring" style="top:50%;left:50%;"></div>
+          <div class="d-dot-label">D01 · 42m · 78%</div>
+        </div>
+
+        <!-- Drone 02 -->
+        <div class="d-dot" style="left:68%;top:28%">
+          <div class="d-dot-inner"></div>
+          <div class="d-dot-ring" style="top:50%;left:50%;animation-delay:1s"></div>
+          <div class="d-dot-label">D02 · 38m · 45%</div>
+        </div>
+
+        <!-- Drone 03 (docking) -->
+        <div class="d-dot" style="left:50%;top:72%">
+          <div class="d-dot-inner y"></div>
+          <div class="d-dot-label y">D03 · DOCKING · 22%</div>
+        </div>
+
+        <!-- Dock station -->
+        <div class="map-base" style="left:50%;top:75%"></div>
+        <div class="map-base-label" style="left:calc(50% + 14px);top:calc(75% - 8px)">DOCK A</div>
+
+        <!-- Coords -->
+        <div class="map-coords">39.9121°N · 32.2834°E — ANKARA, TURKEY</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════
+  PAGE 2 — LIVE VIDEO FEED
+════════════════════════════ -->
+<div class="page" id="page-video">
+  <div class="g-video">
+
+    <!-- Video + controls -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div class="ch">
+          <span>Live Video Feed — Drone 01 — Thermal / RGB</span>
+          <div class="ch-right">
+            <span class="rec">REC</span>
+            <button class="btn btn-b">THERMAL</button>
+            <button class="btn btn-m">RGB</button>
+          </div>
+        </div>
+        <div class="vf-wrap">
+          <div class="therm"></div>
+          <div class="therm2"></div>
+          <div class="therm-noise"></div>
+
+          <!-- Human bounding box -->
+          <div class="bbox human">
+            <div class="bbox-lbl">HUMAN 94%</div>
+            <div class="bbox-corner tl"></div>
+            <div class="bbox-corner tr"></div>
+            <div class="bbox-corner bl"></div>
+            <div class="bbox-corner br"></div>
+          </div>
+
+          <!-- Vehicle bounding box -->
+          <div class="bbox vehicle">
+            <div class="bbox-lbl">VEHICLE 87%</div>
+            <div class="bbox-corner tl"></div>
+            <div class="bbox-corner tr"></div>
+            <div class="bbox-corner bl"></div>
+            <div class="bbox-corner br"></div>
+          </div>
+
+          <div class="crosshair"></div>
+
+          <div class="vf-overlay" style="top:9px;left:9px">FLIR LEPTON 3.5 · THERMAL MODE · 56° HFOV</div>
+          <div class="vf-overlay" style="top:9px;right:60px" id="vfFps">14 fps · 38 ms</div>
+          <div class="vf-overlay" style="bottom:9px;left:9px">DRONE 01 · Sector A · Alt: 42 m · 39.9121°N 32.2834°E</div>
+          <div class="vf-overlay" style="bottom:9px;right:9px" id="vfTime">08:42:31 UTC</div>
+        </div>
+        <div class="qa-row">
+          <button class="btn btn-b">Switch to RGB Mode</button>
+          <button class="btn btn-g">Dispatch Drone 02</button>
+          <button class="btn btn-r">Emergency Return ALL</button>
+          <button class="btn btn-m">Download Clip</button>
+          <button class="btn btn-m">Full Screen</button>
+        </div>
+      </div>
+
+      <!-- AI Engine info -->
+      <div class="card">
+        <div class="ch"><span>AI Detection Engine</span><div class="ch-right"><span style="font-family:var(--mono);font-size:9px;color:var(--green)">● ACTIVE</span></div></div>
+        <div class="cb">
+          <div class="aie">
+            <b>Model:</b> YOLOv5-nano &nbsp;·&nbsp;
+            <b>Processor:</b> GAP8 MCU (64 mW) &nbsp;·&nbsp;
+            <b>Inference Rate:</b> 14 fps &nbsp;·&nbsp;
+            <b>Avg Latency:</b> 38 ms &nbsp;·&nbsp;
+            <b>Status:</b> <span class="on">ACTIVE</span> &nbsp;·&nbsp;
+            <b>Power:</b> 64 mW &nbsp;·&nbsp;
+            <b>Targets in Frame:</b> 2
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detection panel -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div class="ch"><span>Detections</span></div>
+
+        <div class="det-item">
+          <div class="det-type dt-h">HUMAN</div>
+          <div class="det-meta">
+            Location: Zone A2 &nbsp;·&nbsp; Speed: 2.3 m/s NE<br/>
+            GPS: 39.9121°N 32.2834°E
+          </div>
+          <div class="conf-row">
+            <div class="conf-bar"><div class="conf-fill cf-r" style="width:94%"></div></div>
+            <span class="conf-pct">94%</span>
+          </div>
+        </div>
+
+        <div class="det-item">
+          <div class="det-type dt-v">VEHICLE</div>
+          <div class="det-meta">
+            Location: Zone A3 &nbsp;·&nbsp; Type: Light Vehicle<br/>
+            Status: Stationary for 5 min
+          </div>
+          <div class="conf-row">
+            <div class="conf-bar"><div class="conf-fill cf-w" style="width:87%"></div></div>
+            <span class="conf-pct">87%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch"><span>Drone Telemetry</span></div>
+        <div class="sess-row"><span class="sr-l">Altitude</span><span class="sr-v a">42 m</span></div>
+        <div class="sess-row"><span class="sr-l">Heading</span><span class="sr-v">NE 047°</span></div>
+        <div class="sess-row"><span class="sr-l">Ground Speed</span><span class="sr-v">4.2 m/s</span></div>
+        <div class="sess-row"><span class="sr-l">Battery</span><span class="sr-v g">78%</span></div>
+        <div class="sess-row"><span class="sr-l">Signal</span><span class="sr-v g">Strong · 168 ms</span></div>
+        <div class="sess-row"><span class="sr-l">GPS Fix</span><span class="sr-v g">3D Lock · 12 Sats</span></div>
+        <div class="sess-row"><span class="sr-l">Flight Time</span><span class="sr-v">18:42</span></div>
+        <div class="sess-row"><span class="sr-l">Wind Speed</span><span class="sr-v">1.2 m/s SW</span></div>
+      </div>
+
+      <div class="card">
+        <div class="ch"><span>Quick Actions</span></div>
+        <div class="cb" style="display:flex;flex-direction:column;gap:6px">
+          <button class="em-btn em-b"><span class="em-icon">📍</span> Lock Target & Track</button>
+          <button class="em-btn em-g"><span class="em-icon">📸</span> Capture Screenshot</button>
+          <button class="em-btn em-m"><span class="em-icon">🔄</span> Switch Drone View</button>
+          <button class="em-btn em-r"><span class="em-icon">↩</span> Return This Drone</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════
+  PAGE 3 — ALERT LOG
+════════════════════════════ -->
+<div class="page" id="page-alerts">
+  <div class="g2">
+
+    <!-- Event log -->
+    <div class="card">
+      <div class="ch">
+        <span>Event Log</span>
+        <div class="ch-right">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--text2)">5 EVENTS · 31 MAY 2026</span>
+          <button class="btn btn-m" style="padding:3px 8px">EXPORT CSV</button>
+          <button class="btn btn-m" style="padding:3px 8px">CLEAR</button>
+        </div>
+      </div>
+
+      <div class="ev-item">
+        <div class="ev-time">08:42:31 UTC — DRONE 01 — Zone A2</div>
+        <div class="ev-title h">● HUMAN DETECTED</div>
+        <div class="ev-detail">AI conf: 94% · GPS: 39.9121°N, 32.2834°E · Speed: 2.3 m/s NE · Tracking active</div>
+      </div>
+      <div class="ev-item">
+        <div class="ev-time">08:38:12 UTC — DRONE 01 — Zone A3</div>
+        <div class="ev-title v">● VEHICLE DETECTED</div>
+        <div class="ev-detail">AI conf: 87% · Type: Light vehicle · Status: Stationary · Duration: 5 min</div>
+      </div>
+      <div class="ev-item">
+        <div class="ev-time">07:18:45 UTC — DRONE 02 — Zone B1</div>
+        <div class="ev-title a">◆ ACOUSTIC TRIGGER</div>
+        <div class="ev-detail">Impact sound detected · TDOA localization · Drone activated from sleep mode</div>
+      </div>
+      <div class="ev-item">
+        <div class="ev-time">06:56:02 UTC — DRONE 03 — Dock A</div>
+        <div class="ev-title d">✔ AUTO DOCK SUCCESS</div>
+        <div class="ev-detail">Battery: 98% charged · Precision: ±3.2 cm · Charging OK · Next dispatch: ready</div>
+      </div>
+      <div class="ev-item">
+        <div class="ev-time">06:11:30 UTC — DRONE 01 — Zone A4</div>
+        <div class="ev-title p">○ PATROL CYCLE COMPLETE</div>
+        <div class="ev-detail">Duration: 28.4 min · Coverage: 3.2 km² · No threats detected · Battery: 52%</div>
+      </div>
+    </div>
+
+    <!-- Acoustic monitor -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div class="ch">
+          <span>Acoustic Spectrum — Drone 02</span>
+          <div class="ch-right">
+            <span style="font-family:var(--mono);font-size:9px;color:var(--green)">TDOA ACTIVE</span>
+          </div>
+        </div>
+        <div class="cb">
+          <div class="spec-container">
+            <div class="spec-bars" id="specBars"></div>
+            <div class="spec-labels">
+              <span>0 Hz</span><span>500</span><span>1k</span><span>2k</span><span>4k</span><span>8k+</span>
+            </div>
+          </div>
+          <div class="tdoa-row">
+            <div class="tdoa-dot"></div>
+            <span>TDOA Active · No acoustic threat detected · Array: 4× MEMS microphones · SNR: 34 dB</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch"><span>24-Hour Statistics</span></div>
+        <div class="cb">
+          <div class="stat24g">
+            <div class="s24"><span class="s24-val">2</span><div class="s24-lbl">Detections</div></div>
+            <div class="s24"><span class="s24-val g">97%</span><div class="s24-lbl">Uptime</div></div>
+            <div class="s24"><span class="s24-val">4</span><div class="s24-lbl">Dock Cycles</div></div>
+            <div class="s24"><span class="s24-val">3.2s</span><div class="s24-lbl">Avg Response</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch"><span>Threat Summary</span></div>
+        <div class="sess-row"><span class="sr-l">Total Events Today</span><span class="sr-v">5</span></div>
+        <div class="sess-row"><span class="sr-l">Human Detections</span><span class="sr-v" style="color:#ff7788">1</span></div>
+        <div class="sess-row"><span class="sr-l">Vehicle Detections</span><span class="sr-v" style="color:var(--warn)">1</span></div>
+        <div class="sess-row"><span class="sr-l">Acoustic Triggers</span><span class="sr-v" style="color:#66aaff">1</span></div>
+        <div class="sess-row"><span class="sr-l">False Alarms</span><span class="sr-v g">0</span></div>
+        <div class="sess-row"><span class="sr-l">Avg Conf. Score</span><span class="sr-v g">90.5%</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════
+  PAGE 4 — SYSTEM STATUS
+════════════════════════════ -->
+<div class="page" id="page-system">
+  <div class="g-system">
+
+    <!-- Fleet mini -->
+    <div class="card" style="align-self:start">
+      <div class="ch"><span>Fleet Status</span></div>
+      <div class="drone-row" style="padding:10px 12px">
+        <div class="drone-icon" style="width:36px;height:36px;font-size:18px">🚁<div class="di-pulse"></div></div>
+        <div class="drone-info">
+          <div class="dname" style="font-size:10px">DRONE 01 <span class="badge b-fly">FLY</span></div>
+          <div class="dmeta">Bat: <b>78%</b> · Alt: <b>42m</b> · Zone A2<br/>Latency: <b>168ms</b></div>
+          <div class="bat-bar"><div class="bat-fill bf-hi" style="width:78%"></div></div>
+        </div>
+      </div>
+      <div class="drone-row" style="padding:10px 12px">
+        <div class="drone-icon" style="width:36px;height:36px;font-size:18px">🚁<div class="di-pulse" style="animation-delay:.8s"></div></div>
+        <div class="drone-info">
+          <div class="dname" style="font-size:10px">DRONE 02 <span class="badge b-fly">FLY</span></div>
+          <div class="dmeta">Bat: <b>45%</b> · Alt: <b>38m</b> · Zone B1<br/>Latency: <b>110ms</b></div>
+          <div class="bat-bar"><div class="bat-fill bf-md" style="width:45%"></div></div>
+        </div>
+      </div>
+      <div class="drone-row" style="padding:10px 12px">
+        <div class="drone-icon" style="width:36px;height:36px;font-size:18px;border-color:rgba(255,170,0,.4)">🚁<div class="di-pulse yellow"></div></div>
+        <div class="drone-info">
+          <div class="dname" style="font-size:10px">DRONE 03 <span class="badge b-dock">DOCK</span></div>
+          <div class="dmeta">Bat: <b style="color:var(--danger)">22% ⚠</b> · ETA: <b>4 min</b><br/>Latency: <b>64ms</b></div>
+          <div class="bat-bar"><div class="bat-fill bf-lo" style="width:22%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Module health -->
+    <div class="card" style="align-self:start">
+      <div class="ch"><span>Module Health</span></div>
+      <div class="mod-row"><div class="mod-dot md-ok"></div><span class="mod-name">M1 — Sensor Suite (Thermal + RGB + MEMS + Rangefinder)</span><span class="mod-tag">NOMINAL</span></div>
+      <div class="mod-row"><div class="mod-dot md-ok"></div><span class="mod-name">M2 — Onboard AI Processor (GAP8 MCU · YOLOv5-nano)</span><span class="mod-tag">NOMINAL</span></div>
+      <div class="mod-row"><div class="mod-dot md-ok"></div><span class="mod-name">M3 — Flight Controller &amp; Motors (Pixhawk 4 + 4× ESC)</span><span class="mod-tag">NOMINAL</span></div>
+      <div class="mod-row"><div class="mod-dot md-ok"></div><span class="mod-name">M4 — Communication Module (AES-256 · 2.4/5.8 GHz)</span><span class="mod-tag">NOMINAL</span></div>
+      <div class="mod-row"><div class="mod-dot md-warn"></div><span class="mod-name">M5 — Power &amp; Battery Management System</span><span class="mod-tag" style="color:var(--warn)">D03 LOW 22%</span></div>
+      <div class="mod-row"><div class="mod-dot md-ok"></div><span class="mod-name">M6 — Docking Station (ArUco Vision · Qi Wireless)</span><span class="mod-tag">NOMINAL</span></div>
+      <div class="mod-row"><div class="mod-dot md-ok"></div><span class="mod-name">M7 — GCS Software (React + WebRTC + Telemetry)</span><span class="mod-tag">NOMINAL</span></div>
+      <div class="link-info">
+        <span>Encryption: <b>AES-256 Active</b></span>
+        <span>Link Quality: <b>97.3%</b></span>
+        <span>Avg Latency: <b>38 ms</b></span>
+        <span>RF Band: <b>5.8 GHz</b></span>
+      </div>
+    </div>
+
+    <!-- Emergency controls -->
+    <div class="card" style="align-self:start">
+      <div class="ch"><span>Emergency Controls</span></div>
+      <div class="cb">
+        <button class="em-btn em-r"><span class="em-icon">⚠</span><span>RETURN ALL<br/><span style="font-size:7px;font-weight:300;letter-spacing:1px">Auto-dock all active drones</span></span></button>
+        <button class="em-btn em-b"><span class="em-icon">↩</span> Return Drone 01</button>
+        <button class="em-btn em-b"><span class="em-icon">↩</span> Return Drone 02</button>
+        <button class="em-btn em-g"><span class="em-icon">▶</span> Resume Patrol Cycle</button>
+        <button class="em-btn em-m"><span class="em-icon">⏸</span> Pause All Drones</button>
+        <button class="em-btn em-m"><span class="em-icon">⟳</span> Update Patrol Route</button>
+      </div>
+    </div>
+
+    <!-- Session summary -->
+    <div class="card" style="align-self:start">
+      <div class="ch"><span>Session Summary</span></div>
+      <div class="sess-row"><span class="sr-l">Session Duration</span><span class="sr-v a" id="sessTime">6h 42m</span></div>
+      <div class="sess-row"><span class="sr-l">Coverage Today</span><span class="sr-v">18.4 km²</span></div>
+      <div class="sess-row"><span class="sr-l">Dock Cycles</span><span class="sr-v">4</span></div>
+      <div class="sess-row"><span class="sr-l">Avg Threat Resp.</span><span class="sr-v g">3.2 s</span></div>
+      <div class="sess-row"><span class="sr-l">AES-256 Uptime</span><span class="sr-v g">100%</span></div>
+      <div class="sess-row"><span class="sr-l">Total Detections</span><span class="sr-v">2</span></div>
+      <div class="sess-row"><span class="sr-l">False Alarms</span><span class="sr-v g">0</span></div>
+      <div class="sess-row"><span class="sr-l">Avg AI Confidence</span><span class="sr-v g">90.5%</span></div>
+    </div>
+
+  </div>
+</div>
+
+</main>
+
+<script>
+// ── Tab switching ──
+function switchTab(name) {
+  ['fleet','video','alerts','system'].forEach(function(n) {
+    document.getElementById('tab-' + n).classList.toggle('active', n === name);
+    document.getElementById('page-' + n).classList.toggle('active', n === name);
+  });
+}
+
+// ── UTC Clock ──
+function tick() {
+  var now = new Date();
+  var h = String(now.getUTCHours()).padStart(2,'0');
+  var m = String(now.getUTCMinutes()).padStart(2,'0');
+  var s = String(now.getUTCSeconds()).padStart(2,'0');
+  document.getElementById('utcClock').textContent = h + ':' + m + ':' + s + ' UTC';
+  document.getElementById('vfTime').textContent = h + ':' + m + ':' + s + ' UTC';
+}
+setInterval(tick, 1000);
+tick();
+
+// ── Spectrum bars ──
+var specEl = document.getElementById('specBars');
+var baseH = [6,9,14,20,25,18,12,8,6,5,7,11,16,22,30,24,18,13,10,8,6,9,12,16,20,15,11,8,6,4];
+baseH.forEach(function(h) {
+  var b = document.createElement('div');
+  b.className = 'sbar' + (h > 22 ? ' hi' : '');
+  b.style.height = h + 'px';
+  specEl.appendChild(b);
+});
+setInterval(function() {
+  specEl.querySelectorAll('.sbar').forEach(function(b) {
+    var cur = parseFloat(b.style.height);
+    var next = Math.max(3, Math.min(68, cur + (Math.random() - 0.48) * 10));
+    b.style.height = next + 'px';
+    b.classList.toggle('hi', next > 22);
+  });
+}, 200);
+
+// ── FPS counter variation ──
+setInterval(function() {
+  var fps = 12 + Math.floor(Math.random() * 5);
+  var lat = 34 + Math.floor(Math.random() * 10);
+  var el = document.getElementById('vfFps');
+  if (el) el.textContent = fps + ' fps · ' + lat + ' ms';
+}, 1000);
+</script>
+</body>
+</html>
