@@ -332,18 +332,7 @@ Each tick also writes one row to the `telemetry` table — building a full time-
 | **TOTAL** | **~81,250 ₺ (~$2,200 USD)** |
 
 ---
-
-## 👥 Team
-
-| Name | Department | Role |
-|---|---|---|
-| **Ege Azgın** | Mechatronics Engineering | Power Management, Budget & System Integration |
-| **Fatma Nur Çıtır** | Aerospace Engineering | Needs Identification & Flight Control Logic |
-| **Mahmoud Mohamed** | Mechatronics Engineering | Drone Frame & Mechanical Design |
-| **Melis Özdoğan** | Software Engineering | Architecture, Literature Survey & Simulation |
-| **Elifnaz Uysal** | Mechatronics Engineering | Sensor Suite & Docking Station Design |
-
-**Supervisors:** Dr. Ercüment Aydın · Dr. Zühal Erden · Dr. Ali Hosseingholipourasl  
+ 
 **Project Supervisor:** Dr. Zühal Erden
 
 ---
@@ -368,6 +357,6 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 *Atılım University · MECE 322 Multidisciplinary Design in Engineering · May 2026*
 
-**⭐ Star this repo if you found it useful!**
+
 
 </div>
