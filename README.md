@@ -14,7 +14,7 @@
 
 ---
 
-## 📡 Overview
+##  Overview
 
 The **Autonomous Drone Surveillance System (ADSS)** is a fully conceptual, multidisciplinary engineering design project. This repository contains the complete **Ground Control Station (GCS)** web application — a real-time dashboard built with Flask and SQLite that simulates live drone telemetry, threat detection logging, acoustic monitoring, and fleet command-and-control.
 
@@ -22,22 +22,22 @@ The **Autonomous Drone Surveillance System (ADSS)** is a fully conceptual, multi
 
 ---
 
-## ✨ Features
+##  Features
 
 | Feature | Description |
 |---|---|
-| 🗺️ **Fleet Dashboard** | Live drone positions, battery levels, sector info, patrol map |
-| 📹 **Live Video Feed** | Simulated FLIR thermal feed with AI bounding boxes (HUMAN / VEHICLE) |
-| 🔔 **Alert Log** | Full event history with acoustic TDOA spectrum monitor |
-| ⚙️ **System Status** | Module health (M1–M7), emergency controls, session summary |
-| 🗄️ **Database View** | Browse all 5 SQLite tables live — telemetry, events, detections |
-| 🤖 **Live Simulation** | Server-side telemetry updates every API poll (battery drain, position drift) |
-| 🔐 **REST API** | 10 endpoints for drones, events, detections, telemetry, session stats |
-| 💾 **Persistent Storage** | All data written to `adss.db` (SQLite) — survives restarts |
+|  **Fleet Dashboard** | Live drone positions, battery levels, sector info, patrol map |
+|  **Live Video Feed** | Simulated FLIR thermal feed with AI bounding boxes (HUMAN / VEHICLE) |
+|  **Alert Log** | Full event history with acoustic TDOA spectrum monitor |
+|  **System Status** | Module health (M1–M7), emergency controls, session summary |
+|  **Database View** | Browse all 5 SQLite tables live — telemetry, events, detections |
+|  **Live Simulation** | Server-side telemetry updates every API poll (battery drain, position drift) |
+|  **REST API** | 10 endpoints for drones, events, detections, telemetry, session stats |
+|  **Persistent Storage** | All data written to `adss.db` (SQLite) — survives restarts |
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Clone the repository
 
@@ -84,7 +84,7 @@ adss/
 
 ---
 
-## 🗄️ Database Schema
+##  Database Schema
 
 The application uses a single SQLite file (`adss.db`) with 5 tables:
 
@@ -252,7 +252,7 @@ Available commands:
 
 ---
 
-## 📊 Live Simulation
+##  Live Simulation
 
 Every call to `GET /api/drones` triggers one simulation tick on the server:
 
@@ -337,7 +337,7 @@ Each tick also writes one row to the `telemetry` table — building a full time-
 
 ---
 
-## 📚 References
+##  References
 
 - Shakhatreh et al. (2019). *UAVs: A Survey on Civil Applications and Key Research Challenges.* IEEE Access.
 - Palossi et al. (2019). *A 64-mW DNN-based Visual Navigation Engine for Autonomous Nano-Drones.* IEEE IoT Journal.
@@ -347,7 +347,7 @@ Each tick also writes one row to the `telemetry` table — building a full time-
 
 ---
 
-## 📜 License
+##  License
 
 MIT License — see [LICENSE](LICENSE) for details.
 
