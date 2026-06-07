@@ -8,7 +8,7 @@
 ![SQLite](https://img.shields.io/badge/SQLite-Database-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
 ![License](https://img.shields.io/badge/LICENSE-MIT-ffaa00?style=for-the-badge&labelColor=0d1828)
 
-**Atılım University · Faculty of Engineering · MECE 322 · Spring 2025–2026**
+**Atılım University ·Multidisciplinary Design in Engineering · MECE 322 · Spring 2025–2026**
 
 </div>
 
